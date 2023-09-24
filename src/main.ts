@@ -32,6 +32,7 @@ import * as path from 'path';
 import {DOCKER_COMPOSE_KEY, DOCKER_CONTAINER_DECLARATION_KEY} from './const';
 import {parseMemory} from './memory';
 import {fromServiceAccountJsonFile} from './service-account-json';
+import {isJSON} from 'class-validator';
 
 async function findCoiImageId(imageService: WrappedServiceClientType<typeof ImageServiceService>): Promise<string> {
   core.startGroup('Find COI image id');
@@ -106,8 +107,18 @@ interface VmParams {
 function prepareConfig(filePath: string): string {
   const workspace = process.env['GITHUB_WORKSPACE'] ?? '';
   const content = fs.readFileSync(path.join(workspace, filePath)).toString();
-
-  return Mustache.render(content, {env: {...process.env}}, {}, {escape: x => x});
+  const env = Object.fromEntries(
+    Object.entries(process.env).map(([key, value]) => {
+      let val = value;
+      if (value && isJSON(value)) {
+        val = Object.entries(JSON.parse(value))
+          .map(([k, v]: [string, unknown]) => `${k}=${v}`)
+          .join('\n');
+      }
+      return [key, val];
+    }),
+  );
+  return Mustache.render(content, {env}, {}, {escape: x => x});
 }
 
 function getInstanceFromOperation(op: Operation): Instance | undefined {
