@@ -112,7 +112,7 @@ function prepareConfig(filePath: string): string {
       let val = value;
       if (value && isJSON(value)) {
         val = Object.entries(JSON.parse(value))
-          .map(([k, v]: [string, unknown]) => `${k}=${v}`)
+          .map(([k, v]: [string, unknown]) => `${k}: "${v}"`)
           .join('\n');
       }
       return [key, val];
